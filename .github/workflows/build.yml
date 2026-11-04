@@ -1,0 +1,20 @@
+name: build
+
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build amd64 (runtime + dev)
+        run: |
+          docker build --target runtime -t themusicdev/php-nginx-alpine:test .
+          docker build --target dev -t themusicdev/php-nginx-alpine:test-dev .
+      - name: Smoke tests
+        run: tests/smoke-test.sh
+
+  # Publishing is manual from a local machine (fast, no QEMU) — see README
+  # ("Publishing"). CI verifies builds only.
