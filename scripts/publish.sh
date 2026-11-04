@@ -9,11 +9,12 @@ cd "$(dirname "$0")/.."
 ROOT="$PWD"
 
 echo "Logging in to ghcr.io (gh CLI token)"
-echo "$(gh auth token)" | docker login ghcr.io -u "${GITHUB_USER:?set GITHUB_USER, e.g. angelxmoreno}" --password-stdin
+GITHUB_USER="${GITHUB_USER:-$(gh api user --jq .login)}"
+echo "$(gh auth token)" | docker login ghcr.io -u "$GITHUB_USER" --password-stdin >/dev/null
 
 echo "Building + pushing runtime (local + cross via buildx)…"
 docker buildx build \
-    --platform linux/amd64,linux/arm64 \
+    --platform linux/amd64,linux/arm64 --provenance=false \
     --target runtime \
     -t "ghcr.io/themusicdev/php-nginx-alpine:${VERSION}" \
     -t "ghcr.io/themusicdev/php-nginx-alpine:${VERSION%.*}" \
@@ -22,7 +23,7 @@ docker buildx build \
 
 echo "Building + pushing dev…"
 docker buildx build \
-    --platform linux/amd64,linux/arm64 \
+    --platform linux/amd64,linux/arm64 --provenance=false \
     --target dev \
     -t "ghcr.io/themusicdev/php-nginx-alpine:${VERSION}-dev" \
     -t "ghcr.io/themusicdev/php-nginx-alpine:${VERSION%.*}-dev" \
