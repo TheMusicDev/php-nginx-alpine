@@ -1,5 +1,8 @@
 # syntax=docker/dockerfile:1
 
+# Default here is a fallback for plain `docker build`; .php-version at repo
+# root is the source of truth — scripts/publish.sh and tests/smoke-test.sh
+# read it and pass --build-arg PHP_VERSION explicitly. Keep both in sync.
 ARG PHP_VERSION=8.5.12
 
 # ---------- runtime ----------

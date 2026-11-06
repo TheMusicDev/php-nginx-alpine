@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
 
-PHP_VERSION="${PHP_VERSION:-8.5.12}"
+PHP_VERSION="${PHP_VERSION:-$(cat "$ROOT/.php-version")}"
 RT="themusicdev/php-nginx-alpine:${PHP_VERSION}"
 DV="themusicdev/php-nginx-alpine:${PHP_VERSION}-dev"
 
@@ -35,8 +35,8 @@ FAILURES=0
 port_of() { docker port "$1" 80 | awk -F'[: ]' 'NR==1{print $NF}'; }
 
 echo "== Building targets =="
-docker build --target runtime -t "$RT" "$ROOT"
-docker build --target dev -t "$DV" "$ROOT"
+docker build --build-arg PHP_VERSION="$PHP_VERSION" --target runtime -t "$RT" "$ROOT"
+docker build --build-arg PHP_VERSION="$PHP_VERSION" --target dev -t "$DV" "$ROOT"
 echo "== Build OK =="
 pass "both targets build"
 pass "image size: $(docker image inspect "$RT" --format '{{.Size}}' | awk '{printf "%.0f MB", $1/1024/1024}')"
