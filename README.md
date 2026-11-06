@@ -1,3 +1,6 @@
+[![build](https://github.com/TheMusicDev/php-nginx-alpine/actions/workflows/build.yml/badge.svg)](https://github.com/TheMusicDev/php-nginx-alpine/actions/workflows/build.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 # themusicdev/php-nginx-alpine
 
 Slim, framework-agnostic runtime: **nginx + PHP-FPM 8.5 on Alpine**, one container (php-fpm via unix socket + nginx, supervised). For resource-aware deployments, especially Dokploy projects (Traefik in front). Runtime only — apps come in with a tiny child Dockerfile.
@@ -12,6 +15,8 @@ Base: `php:8.5-fpm-alpine` (the patch tag is a build arg — `ARG PHP_VERSION`).
 | `8.5.12-dev` / `8.5-dev` | + Xdebug (off by default), Node LTS, mariadb-client, php.ini-development |
 
 No `latest` tag. Registry: `ghcr.io/themusicdev/php-nginx-alpine` only.
+
+`8.5` (and `8.5-dev`) are floating tags — they move to whatever patch was published last. Pin the full patch tag (`8.5.12`) in production child Dockerfiles; a floating tag can change under you on the next publish.
 
 ## Why two images, and Xdebug
 
@@ -63,9 +68,12 @@ CI builds and runs the smoke tests on PRs; publishing is done locally (Docker mu
 
 ```sh
 scripts/publish.sh 8.5.12      # publishes 8.5.12, 8.5 (+ dev variants) to GHCR
+scripts/publish.sh              # defaults to the version in .php-version
 ```
 
 Requires `gh` auth (uses `gh auth token` for the ghcr.io login) and Docker with containerd multi-platform support (OrbStack: yes).
+
+`.php-version` at the repo root is the source of truth for the current PHP version — bump it when releasing, and `scripts/publish.sh`/`tests/smoke-test.sh` both read it (and pass it through as `--build-arg PHP_VERSION`, so the tag and what's actually baked into the image can't drift apart).
 
 ## Local testing
 
