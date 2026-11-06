@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publish php-nginx-alpine images to GHCR from this machine.
+# Publish php-nginx-alpine images to GHCR + Docker Hub from this machine.
 # Usage: scripts/publish.sh [version]   (defaults to .php-version)
 set -euo pipefail
 
@@ -12,6 +12,9 @@ echo "Logging in to ghcr.io (gh CLI token)"
 GITHUB_USER="${GITHUB_USER:-$(gh api user --jq .login)}"
 echo "$(gh auth token)" | docker login ghcr.io -u "$GITHUB_USER" --password-stdin >/dev/null
 
+# Docker Hub: reuses whatever `docker login` session already exists on this
+# machine (run `docker login` by hand first if that session has expired).
+
 echo "Building + pushing runtime (local + cross via buildx)…"
 docker buildx build \
     --platform linux/amd64,linux/arm64 --provenance=false \
@@ -19,6 +22,8 @@ docker buildx build \
     --target runtime \
     -t "ghcr.io/themusicdev/php-nginx-alpine:${VERSION}" \
     -t "ghcr.io/themusicdev/php-nginx-alpine:${VERSION%.*}" \
+    -t "themusicdev/php-nginx-alpine:${VERSION}" \
+    -t "themusicdev/php-nginx-alpine:${VERSION%.*}" \
     --push \
     "$ROOT"
 
@@ -29,9 +34,13 @@ docker buildx build \
     --target dev \
     -t "ghcr.io/themusicdev/php-nginx-alpine:${VERSION}-dev" \
     -t "ghcr.io/themusicdev/php-nginx-alpine:${VERSION%.*}-dev" \
+    -t "themusicdev/php-nginx-alpine:${VERSION}-dev" \
+    -t "themusicdev/php-nginx-alpine:${VERSION%.*}-dev" \
     --push \
     "$ROOT"
 
 echo "Done:"
-docker buildx imagetools inspect "ghcr.io/themusicdev/php-nginx-alpine:${VERSION}" | grep Platform
-docker buildx imagetools inspect "ghcr.io/themusicdev/php-nginx-alpine:${VERSION}-dev" | grep Platform
+for tag in "ghcr.io/themusicdev/php-nginx-alpine:${VERSION}" "themusicdev/php-nginx-alpine:${VERSION}" \
+           "ghcr.io/themusicdev/php-nginx-alpine:${VERSION}-dev" "themusicdev/php-nginx-alpine:${VERSION}-dev"; do
+    docker buildx imagetools inspect "$tag" | grep Platform
+done

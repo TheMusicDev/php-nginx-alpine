@@ -14,7 +14,7 @@ Base: `php:8.5-fpm-alpine` (the patch tag is a build arg — `ARG PHP_VERSION`).
 | `8.5.12` / `8.5` | runtime |
 | `8.5.12-dev` / `8.5-dev` | + Xdebug (off by default), Node LTS, mariadb-client, php.ini-development |
 
-No `latest` tag. Registry: `ghcr.io/themusicdev/php-nginx-alpine` only.
+No `latest` tag. Published to both `ghcr.io/themusicdev/php-nginx-alpine` and `docker.io/themusicdev/php-nginx-alpine`.
 
 `8.5` (and `8.5-dev`) are floating tags — they move to whatever patch was published last. Pin the full patch tag (`8.5.12`) in production child Dockerfiles; a floating tag can change under you on the next publish.
 
@@ -67,11 +67,11 @@ Inside the container, add custom nginx config by dropping files in `/etc/nginx/h
 CI builds and runs the smoke tests on PRs; publishing is done locally (Docker multi-platform build, no QEMU wait):
 
 ```sh
-scripts/publish.sh 8.5.12      # publishes 8.5.12, 8.5 (+ dev variants) to GHCR
+scripts/publish.sh 8.5.12      # publishes 8.5.12, 8.5 (+ dev variants) to GHCR + Docker Hub
 scripts/publish.sh              # defaults to the version in .php-version
 ```
 
-Requires `gh` auth (uses `gh auth token` for the ghcr.io login) and Docker with containerd multi-platform support (OrbStack: yes).
+Requires `gh` auth (uses `gh auth token` for the ghcr.io login), an existing `docker login` session for Docker Hub (run `docker login` by hand if it's expired — the script doesn't manage that credential), and Docker with containerd multi-platform support (OrbStack: yes).
 
 `.php-version` at the repo root is the source of truth for the current PHP version — bump it when releasing, and `scripts/publish.sh`/`tests/smoke-test.sh` both read it (and pass it through as `--build-arg PHP_VERSION`, so the tag and what's actually baked into the image can't drift apart).
 
