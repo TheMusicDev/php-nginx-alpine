@@ -1,3 +1,6 @@
+[![build](https://github.com/TheMusicDev/php-nginx-alpine/actions/workflows/build.yml/badge.svg)](https://github.com/TheMusicDev/php-nginx-alpine/actions/workflows/build.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 # themusicdev/php-nginx-alpine
 
 Slim, framework-agnostic runtime: **nginx + PHP-FPM 8.5 on Alpine**, one container (php-fpm via unix socket + nginx, supervised). For resource-aware deployments, especially Dokploy projects (Traefik in front). Runtime only — apps come in with a tiny child Dockerfile.
