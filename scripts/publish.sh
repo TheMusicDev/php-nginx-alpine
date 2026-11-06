@@ -44,3 +44,18 @@ for tag in "ghcr.io/themusicdev/php-nginx-alpine:${VERSION}" "themusicdev/php-ng
            "ghcr.io/themusicdev/php-nginx-alpine:${VERSION}-dev" "themusicdev/php-nginx-alpine:${VERSION}-dev"; do
     docker buildx imagetools inspect "$tag" | grep Platform
 done
+
+# Cut CHANGELOG.md: turn "## Unreleased" notes into a dated release entry,
+# leaving Unreleased empty for the next round of PRs. No-op if Unreleased
+# has no bullets yet. Rewrites the file only — doesn't commit it.
+CHANGELOG="$ROOT/CHANGELOG.md"
+if [[ -f "$CHANGELOG" ]] && awk '/^## Unreleased/{f=1;next} /^## /{f=0} f && /^- /{found=1} END{exit !found}' "$CHANGELOG"; then
+    DATE="$(date +%Y-%m-%d)"
+    awk -v ver="$VERSION" -v date="$DATE" '
+        { print }
+        $0 == "## Unreleased" { print ""; print "## " ver " — " date }
+    ' "$CHANGELOG" > "$CHANGELOG.tmp" && mv "$CHANGELOG.tmp" "$CHANGELOG"
+    echo "CHANGELOG.md: cut \"${VERSION} — ${DATE}\" from Unreleased notes — review and commit it"
+else
+    echo "CHANGELOG.md: no Unreleased notes to cut, left as-is"
+fi
