@@ -11,12 +11,14 @@ Base: `php:8.5-fpm-alpine` (the patch tag is a build arg — `ARG PHP_VERSION`).
 
 | Tag | Meaning |
 |---|---|
-| `8.5.12` / `8.5` | runtime |
-| `8.5.12-dev` / `8.5-dev` | + Xdebug (off by default), Node LTS, mariadb-client, php.ini-development |
+| `8.5.12-r2` | runtime — immutable, pin this |
+| `8.5.12` | runtime — latest revision of the 8.5.12 patch (moves) |
+| `8.5` | runtime — latest patch of the 8.5 minor (moves) |
+| `…-dev` variants | + Xdebug (off by default), Node LTS, mariadb-client, php.ini-development |
 
 No `latest` tag. Published to both `ghcr.io/themusicdev/php-nginx-alpine` and `docker.io/themusicdev/php-nginx-alpine`.
 
-`8.5` (and `8.5-dev`) are floating tags — they move to whatever patch was published last. Pin the full patch tag (`8.5.12`) in production child Dockerfiles; a floating tag can change under you on the next publish.
+Tag scheme is `pkgver-rN` (like Alpine packages): the PHP patch is `8.5.12` and the image revision `r2` bumps when the same PHP version is rebuilt with changed contents (e.g. a new PHP extension). The revision tag is the only immutable one — `8.5.12` and `8.5` move on every publish. Pin the full revision tag (`8.5.12-r2`) in production child Dockerfiles.
 
 ## Why two images, and Xdebug
 
@@ -28,7 +30,7 @@ Xdebug is a serious runtime cost **when active**: `debug`/`develop`/`profile` mo
 |---|---|---|
 | `DOCROOT` | `/var/www/html` | document root. CakePHP apps: `/var/www/html/webroot` (code mounted at `/var/www/html`); Slim apps: `/var/www/html/public` |
 
-Build-time: extensions identical to themusicdev/php-apache: `intl pdo_mysql mysqli opcache zip gd (jpeg+webp+freetype) bcmath exif imagick soap xsl bz2 ftp pdo_pgsql pgsql gmp` + bundled `mbstring simplexml pdo_sqlite lexbor uri sodium`; Composer, git, unzip included.
+Build-time: extensions identical to themusicdev/php-apache: `intl pdo_mysql mysqli opcache zip gd (jpeg+webp+freetype) bcmath exif imagick soap xsl bz2 ftp pdo_pgsql pgsql gmp redis` + bundled `mbstring simplexml pdo_sqlite lexbor uri sodium`; Composer, git, unzip included. (Note: imagick listed above is the php-apache parity claim — this image ships without it; the smoke test asserts its absence.)
 
 ## Child Dockerfile examples
 
@@ -67,13 +69,13 @@ Inside the container, add custom nginx config by dropping files in `/etc/nginx/h
 CI builds and runs the smoke tests on PRs; publishing is done locally (Docker multi-platform build, no QEMU wait):
 
 ```sh
-scripts/publish.sh 8.5.12      # publishes 8.5.12, 8.5 (+ dev variants) to GHCR + Docker Hub
-scripts/publish.sh              # defaults to the version in .php-version
+scripts/publish.sh 8.5.12-r2   # publishes 8.5.12-r2, 8.5.12, 8.5 (+ dev variants) to GHCR + Docker Hub
+scripts/publish.sh              # defaults to .image-version at the repo root
 ```
 
 Requires `gh` auth (uses `gh auth token` for the ghcr.io login), an existing `docker login` session for Docker Hub (run `docker login` by hand if it's expired — the script doesn't manage that credential), and Docker with containerd multi-platform support (OrbStack: yes).
 
-`.php-version` at the repo root is the source of truth for the current PHP version — bump it when releasing, and `scripts/publish.sh`/`tests/smoke-test.sh` both read it (and pass it through as `--build-arg PHP_VERSION`, so the tag and what's actually baked into the image can't drift apart).
+`.image-version` at the repo root is the source of truth for the current full image tag (e.g. `8.5.12-r2`) — bump the revision (`r` part) when rebuilding the same PHP patch with changed contents, bump the version part when the PHP patch or feature set changes. `scripts/publish.sh`/`tests/smoke-test.sh` both read it (and pass the base version as `--build-arg PHP_VERSION`, so the tag and what's actually baked into the image can't drift apart).
 
 ## Local testing
 

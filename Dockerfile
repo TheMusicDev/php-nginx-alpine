@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
 
-# Default here is a fallback for plain `docker build`; .php-version at repo
-# root is the source of truth — scripts/publish.sh and tests/smoke-test.sh
-# read it and pass --build-arg PHP_VERSION explicitly. Keep both in sync.
+# Default here is a fallback for plain `docker build`; .image-version at repo
+# root is the source of truth for the full image tag (`8.5.12-r2` style) —
+# scripts/publish.sh and tests/smoke-test.sh read it, split it, and pass
+# --build-arg PHP_VERSION explicitly. Keep both in sync.
 ARG PHP_VERSION=8.5.12
 
 # ---------- runtime ----------
@@ -37,6 +38,7 @@ RUN set -e \
         pdo_pgsql \
         pgsql \
         gmp \
+        redis \
     && docker-php-source delete
 
 # Composer/system tools

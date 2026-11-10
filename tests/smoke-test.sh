@@ -6,7 +6,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
 
-PHP_VERSION="${PHP_VERSION:-$(cat "$ROOT/.php-version")}"
+PHP_VERSION="${PHP_VERSION:-$(cat "$ROOT/.image-version")}"
+PHP="${PHP_VERSION%%-*}"   # strip -rN revision for the PHP_VERSION build arg
 RT="themusicdev/php-nginx-alpine:${PHP_VERSION}"
 DV="themusicdev/php-nginx-alpine:${PHP_VERSION}-dev"
 
@@ -35,8 +36,8 @@ FAILURES=0
 port_of() { docker port "$1" 80 | awk -F'[: ]' 'NR==1{print $NF}'; }
 
 echo "== Building targets =="
-docker build --build-arg PHP_VERSION="$PHP_VERSION" --target runtime -t "$RT" "$ROOT"
-docker build --build-arg PHP_VERSION="$PHP_VERSION" --target dev -t "$DV" "$ROOT"
+docker build --build-arg PHP_VERSION="$PHP" --target runtime -t "$RT" "$ROOT"
+docker build --build-arg PHP_VERSION="$PHP" --target dev -t "$DV" "$ROOT"
 echo "== Build OK =="
 pass "both targets build"
 pass "image size: $(docker image inspect "$RT" --format '{{.Size}}' | awk '{printf "%.0f MB", $1/1024/1024}')"
@@ -54,7 +55,7 @@ echo "== php -v / extensions (runtime) =="
 PV=$(docker exec "$CAKE" php -r 'echo PHP_VERSION;')
 [[ "$PV" == 8.5.* ]] && pass "php -v is 8.5.x ($PV)" || fail "php -v is $PV"
 
-for ext in intl pdo_mysql mysqli zip gd bcmath exif mbstring simplexml pdo_sqlite soap xsl bz2 ftp pdo_pgsql pgsql gmp; do
+for ext in intl pdo_mysql mysqli zip gd bcmath exif mbstring simplexml pdo_sqlite soap xsl bz2 ftp pdo_pgsql pgsql gmp redis; do
     docker exec "$CAKE" php -r "exit((int)!extension_loaded('$ext'));" \
         && pass "ext: $ext" || fail "ext: $ext missing"
 done

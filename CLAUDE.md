@@ -28,9 +28,9 @@ docker compose down
 
 Publish to GHCR (local machine only — CI does not publish):
 ```sh
-scripts/publish.sh 8.5.12
+scripts/publish.sh 8.5.12-r2   # defaults to .image-version
 ```
-Requires `gh` auth and a Docker buildx builder with multi-platform (containerd) support — OrbStack provides this. Builds+pushes `runtime` as `:8.5.12`/`:8.5` and `dev` as `:8.5.12-dev`/`:8.5-dev` for `linux/amd64,linux/arm64`.
+Requires `gh` auth and a Docker buildx builder with multi-platform (containerd) support — OrbStack provides this. Tag scheme is `pkgver-rN`: builds+pushes `runtime` as `:8.5.12-r2`/`:8.5.12`/`:8.5` and `dev` as `:8.5.12-r2-dev`/`:8.5.12-dev`/`:8.5-dev` for `linux/amd64,linux/arm64`. The revision tag is immutable; `8.5.12` and `8.5` move on every publish.
 
 CI (`.github/workflows/build.yml`) builds and runs smoke tests on PRs; it does not publish.
 
@@ -42,5 +42,5 @@ CI (`.github/workflows/build.yml`) builds and runs smoke tests on PRs; it does n
 - **PHP reaches nginx only via unix socket** (`docker/php-fpm/zz-pool.conf`, socket at `/run/php-fpm-www.sock`), matching the `fastcgi_pass` in `default.conf`. There is no TCP path between nginx and php-fpm.
 - **Proxy trust**: real client IP from `X-Forwarded-For` (private ranges trusted) and `HTTPS=on` surfaced to PHP when `X-Forwarded-Proto: https` — same contract as `themusicdev/php-apache`, so apps don't need to special-case this image. Verified by the proxy-header smoke tests.
 - **Runtime vs. dev is a hard security boundary, not a convenience split.** `runtime` never installs Xdebug at all (zero risk of accidental enablement in prod); `dev` installs it but ships with `XDEBUG_MODE=off` by default via `docker/php/` config, overridable per-container with the `XDEBUG_MODE` env var. Never point a deploy at the `-dev` tag.
-- **Version is a build arg, not hardcoded**: `ARG PHP_VERSION` (default `8.5.12`) selects the upstream `php:${PHP_VERSION}-fpm-alpine` base and is also baked into OCI labels. `scripts/publish.sh` and `tests/smoke-test.sh` both take/default this version independently — bumping the PHP patch version means passing it to both, not editing a shared constant.
+- **Version is a build arg, not hardcoded**: `ARG PHP_VERSION` (default `8.5.12`) selects the upstream `php:${PHP_VERSION}-fpm-alpine` base and is also baked into OCI labels. `.image-version` at the repo root holds the full image tag (e.g. `8.5.12-r2`); `scripts/publish.sh` and `tests/smoke-test.sh` split off the base PHP version and pass it as `--build-arg PHP_VERSION`. Rebuilding the same PHP patch with changed contents (e.g. a new extension) bumps the `r` revision in `.image-version`; a new PHP patch bumps the version part.
 - **Extension list is intentionally kept in parity with `themusicdev/php-apache`** (see README) — when adding/removing a PHP extension, check that sibling image's extension list too, and update the matching assertions in `tests/smoke-test.sh`.
