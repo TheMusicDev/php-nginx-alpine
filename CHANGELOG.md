@@ -4,6 +4,11 @@ One line per published image tag.
 
 ## Unreleased
 
+## 8.5.12-r2 — 2026-11-10
+
+- Add PHP `redis` extension to the runtime and dev images
+- Tag scheme: introduce image revisions (`8.5.12-r2`) — the revision tag is immutable; `8.5.12` and `8.5` now move on every publish; `.php-version` renamed to `.image-version` holding the full tag
+
 ## 8.5.12 — republished 2026-11-06
 
 Same PHP version, new image digest — tooling/registry changes only, no runtime behavior change:
